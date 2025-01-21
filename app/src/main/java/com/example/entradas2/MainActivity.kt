@@ -18,6 +18,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.widget.EditText
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
 import java.util.UUID
 
 /**
@@ -38,6 +39,7 @@ class MainActivity : AppCompatActivity() {
 
     // ID del trabajo en ejecución, generado dinámicamente
     private var workId = UUID.randomUUID()
+    private var semaforo="R"
 
     /**
      * Método que se ejecuta al crear la actividad.
@@ -69,6 +71,11 @@ class MainActivity : AppCompatActivity() {
 
         // Listener para el botón "Play"
         btnPlay.setOnClickListener {
+            this.semaforo="V"
+            val sharedPreferences = getSharedPreferences("WebCheckerPrefs", MODE_PRIVATE)
+            sharedPreferences.edit().putString("semaforo", semaforo).apply()
+
+            WorkManager.getInstance(this).cancelAllWorkByTag(this.workTag)
             val workRequest = PeriodicWorkRequestBuilder<WebCheckerWorker>(
                 15, // Intervalo mínimo de 15 minutos
                 TimeUnit.MINUTES
@@ -83,6 +90,11 @@ class MainActivity : AppCompatActivity() {
 
         // Listener para el botón "Stop"
         btnStop.setOnClickListener {
+            println("Pulso boton stop")
+            this.semaforo="R"
+            val sharedPreferences = getSharedPreferences("WebCheckerPrefs", MODE_PRIVATE)
+            sharedPreferences.edit().putString("semaforo", semaforo).apply()
+
             stopWork()
         }
 
@@ -131,15 +143,23 @@ class MainActivity : AppCompatActivity() {
      */
     private fun stopWork() {
         // Cancelar trabajos asociados con la etiqueta
-        WorkManager.getInstance(this).cancelAllWorkByTag(this.workTag)
+        //WorkManager.getInstance(this).cancelAllWorkByTag(this.workTag)
 
         // Cancelar trabajos específicos por ID
         WorkManager.getInstance(this).cancelWorkById(this.workId)
-        WorkManager.getInstance(this).cancelAllWork()
+        //WorkManager.getInstance(this).cancelAllWork()
+        WorkManager.getInstance(this).pruneWork()
+        WorkManager.getInstance(this).getWorkInfosByTag(workTag).get().forEach { workInfo ->
+            println("Trabajo ID: ${workInfo.id}, Estado: ${workInfo.state}")
 
-        // Cerrar la aplicación
-        finishAffinity()
-        System.exit(0)
-        println("Trabajo detenido correctamente")
-    }
+            // Cancelar solo si el trabajo está encolado o en ejecución
+            if (workInfo.state == WorkInfo.State.ENQUEUED || workInfo.state == WorkInfo.State.RUNNING) {
+                WorkManager.getInstance(this).cancelWorkById(workInfo.id)
+                println("Trabajo con ID ${workInfo.id} cancelado")
+            }
+        }
+
+
+
+        }
 }

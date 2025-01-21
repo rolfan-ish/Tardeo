@@ -46,13 +46,26 @@ class WebCheckerWorker(appContext: Context, workerParams: WorkerParameters) : Wo
      */
     override fun doWork(): Result {
         try {
-            // Obtener la URL y la palabra desde las preferencias compartidas
             val sharedPreferences = applicationContext.getSharedPreferences("WebCheckerPrefs", Context.MODE_PRIVATE)
+
+            val semaforo = sharedPreferences.getString("semaforo", null) ?: return Result.failure()
+
+            if (isStopped || semaforo.equals("R")) {
+                println("stopped")
+                return Result.failure()
+
+            }
+            // Obtener la URL y la palabra desde las preferencias compartidas
             val url = sharedPreferences.getString("url", null) ?: return Result.failure()
             val word = sharedPreferences.getString("word", null) ?: return Result.failure()
-
+            if (isStopped || semaforo.equals("R")) {
+                return Result.failure()
+            }
             // Conectar a la página web
             val doc = Jsoup.connect(url).get()
+            if (isStopped || semaforo.equals("R")) {
+                return Result.failure()
+            }
 
             // Verificar si la palabra está presente
             if (doc.text().contains(word, ignoreCase = true)) {
