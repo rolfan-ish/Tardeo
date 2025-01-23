@@ -1,0 +1,11 @@
+$dokka.format:html-v1
+$dokka.linkExtension:html
+$dokka.location:com.example.entradas2////PointingToDeclaration/app/com.example.entradas2/index.html
+$dokka.location:com.example.entradas2/MainActivity///PointingToDeclaration/app/com.example.entradas2/-main-activity/index.html
+$dokka.location:com.example.entradas2/MainActivity/MainActivity/#/PointingToDeclaration/app/com.example.entradas2/-main-activity/-main-activity.html
+$dokka.location:com.example.webchecker////PointingToDeclaration/app/com.example.webchecker/index.html
+$dokka.location:com.example.webchecker/WebCheckerWorker///PointingToDeclaration/app/com.example.webchecker/-web-checker-worker/index.html
+$dokka.location:com.example.webchecker/WebCheckerWorker/WebCheckerWorker/#android.content.Context#androidx.work.WorkerParameters/PointingToDeclaration/app/com.example.webchecker/-web-checker-worker/-web-checker-worker.html
+$dokka.location:com.example.webchecker/WebCheckerWorker/doWork/#/PointingToDeclaration/app/com.example.webchecker/-web-checker-worker/do-work.html
+com.example.entradas2
+com.example.webchecker
