@@ -1,22 +1,14 @@
 package com.example.webchecker
 
-import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
-import android.widget.Button
-import android.widget.EditText
-import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
-import com.example.entradas2.R
 import org.jsoup.Jsoup
-import java.lang.Exception
 
 /**
  * Worker que realiza la tarea de comprobar una página web en segundo plano
@@ -32,7 +24,8 @@ import java.lang.Exception
  * @param appContext El contexto de la aplicación.
  * @param workerParams Parámetros adicionales proporcionados por WorkManager.
  */
-class WebCheckerWorker(appContext: Context, workerParams: WorkerParameters) : Worker(appContext, workerParams) {
+class WebCheckerWorker(appContext: Context, workerParams: WorkerParameters) :
+    Worker(appContext, workerParams) {
 
     /**
      * Método principal que realiza la tarea en segundo plano.
@@ -46,7 +39,8 @@ class WebCheckerWorker(appContext: Context, workerParams: WorkerParameters) : Wo
      */
     override fun doWork(): Result {
         try {
-            val sharedPreferences = applicationContext.getSharedPreferences("WebCheckerPrefs", Context.MODE_PRIVATE)
+            val sharedPreferences =
+                applicationContext.getSharedPreferences("WebCheckerPrefs", Context.MODE_PRIVATE)
 
             val semaforo = sharedPreferences.getString("semaforo", null) ?: return Result.failure()
 
@@ -69,7 +63,13 @@ class WebCheckerWorker(appContext: Context, workerParams: WorkerParameters) : Wo
 
             // Verificar si la palabra está presente
             if (doc.text().contains(word, ignoreCase = true)) {
-                sendNotification()
+                val contenidoPagina = doc.text()
+                val indice = contenidoPagina.indexOf(word, ignoreCase = true)
+                val contexto = contenidoPagina.substring(
+                    maxOf(0, indice - 30),
+                    minOf(contenidoPagina.length, indice + word.length + 30)
+                )
+                sendNotification(contexto)
             }
 
         } catch (e: Exception) {
@@ -86,7 +86,7 @@ class WebCheckerWorker(appContext: Context, workerParams: WorkerParameters) : Wo
      * <p>La notificación se muestra con el título "¡Se encontró la palabra!"
      * y un mensaje que indica que la palabra fue encontrada.</p>
      */
-    private fun sendNotification() {
+    private fun sendNotification(contexto: String) {
         val context = applicationContext
 
         // Crear el canal de notificación (solo necesario para API 26+)
@@ -98,19 +98,21 @@ class WebCheckerWorker(appContext: Context, workerParams: WorkerParameters) : Wo
             ).apply {
                 description = "Canal para notificaciones de palabras encontradas"
             }
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
 
         // Crear y enviar la notificación
         val notification: Notification = NotificationCompat.Builder(context, "guestlist_channel")
             .setContentTitle("¡Se encontró la palabra!")
-            .setContentText("La palabra fue encontrada en la página web.")
+            .setContentText("Fragmento: $contexto...")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(1, notification)
     }
 }
