@@ -26,6 +26,16 @@
         app:layout_constraintTop_toBottomOf="@id/url"
         android:layout_margin="16dp"/>
 
+    <EditText
+        android:id="@+id/interval"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Interval (min)"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/palabra"
+        android:layout_margin="16dp"/>
+
     <Button
         android:id="@+id/btnPlay"
         android:layout_width="wrap_content"

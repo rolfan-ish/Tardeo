@@ -1,25 +1,22 @@
 package com.example.entradas2
 
+import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.widget.Button
+import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.work.PeriodicWorkRequest
-import androidx.work.WorkManager
-import com.example.entradas2.R
-import com.example.webchecker.WebCheckerWorker
-import java.util.concurrent.TimeUnit
-import android.Manifest
-import android.content.Context
-import android.text.Editable
-import android.text.TextWatcher
-import android.widget.EditText
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import com.example.webchecker.WebCheckerWorker
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 /**
  * Actividad principal de la aplicación que permite configurar una URL y una palabra clave
@@ -39,7 +36,7 @@ class MainActivity : AppCompatActivity() {
 
     // ID del trabajo en ejecución, generado dinámicamente
     private var workId = UUID.randomUUID()
-    private var semaforo="R"
+    private var semaforo = "R"
 
     /**
      * Método que se ejecuta al crear la actividad.
@@ -56,14 +53,35 @@ class MainActivity : AppCompatActivity() {
 
         // Solicitar permisos para notificaciones si es necesario
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    1001
+                )
             }
         }
 
         // Inicializar campos de texto
         val urlField = findViewById<EditText>(R.id.url)
         val wordField = findViewById<EditText>(R.id.palabra)
+        val intervalField = findViewById<EditText>(R.id.interval)
+        // Capturar cambios en el campo de intervalo
+        intervalField.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                val interval = s.toString().toIntOrNull() ?: 15
+                val sharedPreferences = getSharedPreferences("WebCheckerPrefs", MODE_PRIVATE)
+                sharedPreferences.edit().putInt("interval", interval).apply()
+                println("Intervalo ingresado: $interval minutos")
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
 
         // Inicializar botones
         val btnPlay = findViewById<Button>(R.id.btnPlay)
@@ -71,13 +89,15 @@ class MainActivity : AppCompatActivity() {
 
         // Listener para el botón "Play"
         btnPlay.setOnClickListener {
-            this.semaforo="V"
+            this.semaforo = "V"
             val sharedPreferences = getSharedPreferences("WebCheckerPrefs", MODE_PRIVATE)
             sharedPreferences.edit().putString("semaforo", semaforo).apply()
 
+            val interval = sharedPreferences.getInt("interval", 15)
+
             WorkManager.getInstance(this).cancelAllWorkByTag(this.workTag)
             val workRequest = PeriodicWorkRequestBuilder<WebCheckerWorker>(
-                15, // Intervalo mínimo de 15 minutos
+                interval.toLong(), // Intervalo definido por el usuario
                 TimeUnit.MINUTES
             ).addTag(this.workTag).build()
 
@@ -91,7 +111,7 @@ class MainActivity : AppCompatActivity() {
         // Listener para el botón "Stop"
         btnStop.setOnClickListener {
             println("Pulso boton stop")
-            this.semaforo="R"
+            this.semaforo = "R"
             val sharedPreferences = getSharedPreferences("WebCheckerPrefs", MODE_PRIVATE)
             sharedPreferences.edit().putString("semaforo", semaforo).apply()
 
@@ -160,6 +180,5 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-
-        }
+    }
 }
